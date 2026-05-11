@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Construtor de Prompt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .builder-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        @media (min-width: 1180px) {
+            .builder-grid {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(360px, .85fr);
+                align-items: start;
+            }
+
+            .builder-column {
+                max-height: calc(100vh - 6.5rem);
+                overflow: auto;
+                padding-right: .125rem;
+            }
+
+            .builder-side {
+                display: flex;
+                flex-direction: column;
+                height: calc(100vh - 6.5rem);
+                overflow: hidden;
+                position: sticky;
+                top: 1rem;
+            }
+        }
+
+        .builder-column::-webkit-scrollbar,
+        .prompt-preview::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+
+        .builder-column::-webkit-scrollbar-thumb,
+        .prompt-preview::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-950 antialiased">
+    <main
+        class="mx-auto min-h-screen w-full max-w-screen-2xl px-4 py-4 sm:px-6"
+        x-data="promptBuilder()"
+        x-init="$nextTick(() => lucide.createIcons())"
+        x-cloak
+    >
+        <header class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-white">
+                    <i data-lucide="wand-sparkles" class="h-4 w-4"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-semibold leading-5">Construtor de Prompt</h1>
+                    <p class="text-xs text-slate-500">Prompt pronto para copiar em tempo real</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+                    @click="limpar()"
+                >
+                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                    Limpar
+                </button>
+                <button
+                    type="button"
+                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-white transition"
+                    :class="copiado ? 'bg-emerald-600' : 'bg-slate-900 hover:bg-slate-800'"
+                    @click="copiar()"
+                >
+                    <i x-show="!copiado" data-lucide="copy" class="h-4 w-4"></i>
+                    <i x-show="copiado" data-lucide="check" class="h-4 w-4"></i>
+                    <span x-text="copiado ? 'Copiado' : 'Copiar'"></span>
+                </button>
+            </div>
+        </header>
+
+        <div class="builder-grid">
+            <section class="builder-column rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
+                    <i data-lucide="clipboard-list" class="h-4 w-4 text-slate-500"></i>
+                    <h2 class="text-sm font-semibold">Tarefa</h2>
+                </div>
+
+                <div class="space-y-4 p-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <label class="space-y-1.5">
+                            <span class="text-sm font-medium">Tipo</span>
+                            <select class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.tipoTarefa">
+                                <option value="">Tipo de trabalho</option>
+                                <template x-for="tipo in tipos" :key="tipo.value">
+                                    <option :value="tipo.value" x-text="tipo.label"></option>
+                                </template>
+                            </select>
+                        </label>
+
+                        <label class="space-y-1.5">
+                            <span class="text-sm font-medium">Título</span>
+                            <input class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.titulo" placeholder="Ex: Implementar autenticação via Sanctum">
+                        </label>
+                    </div>
+
+                    <label class="space-y-1.5">
+                        <span class="text-sm font-medium">Objetivo</span>
+                        <input class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.objetivoPrincipal" placeholder="Resultado final esperado">
+                    </label>
+
+                    <label class="space-y-1.5">
+                        <span class="text-sm font-medium">Descrição da Tarefa</span>
+                        <textarea class="min-h-[13rem] w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm leading-6 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.tarefa" placeholder="Descreva o que precisa ser feito..."></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="builder-column space-y-4">
+                <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
+                        <i data-lucide="link" class="h-4 w-4 text-slate-500"></i>
+                        <h2 class="text-sm font-semibold">Contexto</h2>
+                    </div>
+
+                    <div class="space-y-4 p-4">
+                        <label class="space-y-1.5">
+                            <span class="text-sm font-medium">Problema / cenário</span>
+                            <textarea class="min-h-[5.5rem] w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm leading-6 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.contextoProblema" placeholder="Contexto atual, problema e decisões já tomadas..."></textarea>
+                        </label>
+
+                        <div class="space-y-1.5">
+                            <span class="text-sm font-medium">Arquivos / Docs de Referência</span>
+                            <div class="rounded-lg border border-slate-300 bg-white p-2 focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-slate-900/10">
+                                <div class="mb-2 flex flex-wrap gap-1.5" x-show="form.referencias.length">
+                                    <template x-for="(item, index) in form.referencias" :key="`${item}-${index}`">
+                                        <span class="inline-flex max-w-full items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
+                                            <span class="truncate" x-text="item"></span>
+                                            <button type="button" class="text-blue-500 hover:text-blue-900" @click="removeTag('referencias', index)">×</button>
+                                        </span>
+                                    </template>
+                                </div>
+                                <input class="h-8 w-full border-0 px-1 text-sm outline-none" x-model="tagDrafts.referencias" @keydown.enter.prevent="addTag('referencias')" placeholder="Cole um caminho, URL ou nota e pressione Enter">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <template x-for="campo in tagFieldsTop" :key="campo.key">
+                                <div class="space-y-1.5">
+                                    <span class="text-sm font-medium" x-text="campo.label"></span>
+                                    <div class="rounded-lg border border-slate-300 bg-white p-2 focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-slate-900/10">
+                                        <div class="mb-2 flex flex-wrap gap-1.5" x-show="form[campo.key].length">
+                                            <template x-for="(item, index) in form[campo.key]" :key="`${campo.key}-${item}-${index}`">
+                                                <span class="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                                                    <span class="truncate" x-text="item"></span>
+                                                    <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeTag(campo.key, index)">×</button>
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <input class="h-8 w-full border-0 px-1 text-sm outline-none" x-model="tagDrafts[campo.key]" @keydown.enter.prevent="addTag(campo.key)" :placeholder="campo.placeholder">
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
+                        <i data-lucide="sliders-horizontal" class="h-4 w-4 text-slate-500"></i>
+                        <h2 class="text-sm font-semibold">Regras e Resposta</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
+                        <template x-for="campo in tagFieldsRules" :key="campo.key">
+                            <div class="space-y-1.5">
+                                <span class="text-sm font-medium" x-text="campo.label"></span>
+                                <div class="rounded-lg border border-slate-300 bg-white p-2 focus-within:border-slate-900 focus-within:ring-2 focus-within:ring-slate-900/10">
+                                    <div class="mb-2 flex flex-wrap gap-1.5" x-show="form[campo.key].length">
+                                        <template x-for="(item, index) in form[campo.key]" :key="`${campo.key}-${item}-${index}`">
+                                            <span class="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                                                <span class="truncate" x-text="item"></span>
+                                                <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeTag(campo.key, index)">×</button>
+                                            </span>
+                                        </template>
+                                    </div>
+                                    <input class="h-8 w-full border-0 px-1 text-sm outline-none" x-model="tagDrafts[campo.key]" @keydown.enter.prevent="addTag(campo.key)" :placeholder="campo.placeholder">
+                                </div>
+                            </div>
+                        </template>
+
+                        <label class="space-y-1.5">
+                            <span class="text-sm font-medium">Impacto Esperado</span>
+                            <input class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.impactoEsperado" placeholder="O que deve melhorar?">
+                        </label>
+
+                        <label class="space-y-1.5">
+                            <span class="text-sm font-medium">Resposta Final</span>
+                            <input class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.observacoesResposta" placeholder="Formato ou detalhe obrigatório...">
+                        </label>
+
+                        <label class="space-y-1.5 sm:col-span-2">
+                            <span class="text-sm font-medium">Contexto Adicional</span>
+                            <input class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.contextoAdicional" placeholder="Qualquer informação extra relevante...">
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="builder-side space-y-4">
+                <section class="shrink-0 rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-200 px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="settings-2" class="h-4 w-4 text-slate-500"></i>
+                            <h2 class="text-sm font-semibold">Saída</h2>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 p-4">
+                        <template x-for="opcao in saidaOptions" :key="opcao.key">
+                            <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                                <input type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" x-model="form[opcao.key]">
+                                <span x-text="opcao.label"></span>
+                            </label>
+                        </template>
+                    </div>
+                </section>
+
+                <section class="flex min-h-[18rem] flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="code-2" class="h-4 w-4 text-slate-500"></i>
+                            <h2 class="text-sm font-semibold">Preview</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200" @click="limpar()">
+                                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                Limpar
+                            </button>
+                            <button type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800" @click="copiar()">
+                                <i data-lucide="copy" class="h-4 w-4"></i>
+                                Copiar
+                            </button>
+                        </div>
+                    </div>
+                    <pre class="prompt-preview min-h-0 flex-1 overflow-auto whitespace-pre-wrap p-4 font-mono text-xs leading-relaxed text-slate-800" x-text="prompt"></pre>
+                </section>
+            </aside>
+        </div>
+    </main>
+
+    <script>
+        function promptBuilder() {
+            const defaults = {
+                tipoTarefa: '',
+                titulo: '',
+                objetivoPrincipal: '',
+                tarefa: '',
+                contextoProblema: '',
+                referencias: [],
+                objetivos: [],
+                criteriosAceite: [],
+                restricoes: [],
+                foraEscopo: [],
+                impactoEsperado: '',
+                observacoesResposta: '',
+                contextoAdicional: '',
+                precisaDocumentar: false,
+                codigoComentado: false,
+                comoTestar: false,
+                usarPlaywrightCli: false,
+                gerarDadosFalsos: false,
+            };
+
+            return {
+                copiado: false,
+                form: structuredClone(defaults),
+                tagDrafts: {
+                    referencias: '',
+                    objetivos: '',
+                    criteriosAceite: '',
+                    restricoes: '',
+                    foraEscopo: '',
+                },
+                tipos: [
+                    { value: 'feature', label: 'Feature / melhoria' },
+                    { value: 'bugfix', label: 'Correção de bug' },
+                    { value: 'refactor', label: 'Refatoração' },
+                    { value: 'ui', label: 'Interface / UX' },
+                    { value: 'investigacao', label: 'Investigação' },
+                    { value: 'documentacao', label: 'Documentação' },
+                    { value: 'teste', label: 'Teste / cobertura' },
+                    { value: 'performance', label: 'Performance' },
+                    { value: 'infraestrutura', label: 'Infraestrutura' },
+                ],
+                tagFieldsTop: [
+                    { key: 'objetivos', label: 'Objetivos', placeholder: 'Adicione objetivo e pressione Enter' },
+                    { key: 'criteriosAceite', label: 'Critérios de Aceite', placeholder: 'Adicione critério e pressione Enter' },
+                ],
+                tagFieldsRules: [
+                    { key: 'restricoes', label: 'Restrições', placeholder: 'Ex: Não criar novos arquivos...' },
+                    { key: 'foraEscopo', label: 'Fora do Escopo', placeholder: 'O que não fazer...' },
+                ],
+                saidaOptions: [
+                    { key: 'precisaDocumentar', label: 'Docs' },
+                    { key: 'codigoComentado', label: 'Comentários' },
+                    { key: 'comoTestar', label: 'Como testar' },
+                    { key: 'usarPlaywrightCli', label: 'Playwright CLI' },
+                    { key: 'gerarDadosFalsos', label: 'Dados falsos' },
+                ],
+                get prompt() {
+                    const partes = [];
+
+                    partes.push('## Papel\n\nVocê é um Senior PHP Developer especialista em Pest, Laravel, Alpine, Tailwind, Filament e programação defensiva.');
+                    partes.push('## Contexto do Projeto\n\nLeia o arquivo `PROJECT.md` na raiz do projeto para entender a arquitetura, padrões e convenções do sistema antes de iniciar qualquer tarefa.');
+                    partes.push('## Superpowers\n\nEste projeto possui o plugin Superpowers instalado. Use o comando `skill` para listar e carregar skills adicionais quando necessário. Para sessões de brainstorming use `superpowers/brainstorming`.');
+
+                    const tarefa = [];
+                    const titulo = this.form.titulo.trim() || 'Tarefa';
+
+                    if (this.form.tipoTarefa) {
+                        tarefa.push(`- **Tipo:** ${this.tipoLabel(this.form.tipoTarefa)}`);
+                    }
+
+                    if (this.form.objetivoPrincipal.trim()) {
+                        tarefa.push(`- **Objetivo principal:** ${this.form.objetivoPrincipal.trim()}`);
+                    }
+
+                    if (this.form.tarefa.trim()) {
+                        tarefa.push(`\n${this.form.tarefa.trim()}`);
+                    }
+
+                    if (tarefa.length || this.form.titulo.trim()) {
+                        partes.push(`## ${titulo}${tarefa.length ? `\n\n${tarefa.join('\n')}` : ''}`);
+                    }
+
+                    const contextos = [];
+                    if (this.form.contextoProblema.trim()) {
+                        contextos.push(`### Contexto do Problema\n\n${this.form.contextoProblema.trim()}`);
+                    }
+                    if (this.form.impactoEsperado.trim()) {
+                        contextos.push(`### Impacto Esperado\n\n${this.form.impactoEsperado.trim()}`);
+                    }
+                    if (this.form.referencias.length) {
+                        contextos.push(`### Referências\n\n${this.form.referencias.map((item) => `- \`${item}\``).join('\n')}`);
+                    }
+                    if (this.form.contextoAdicional.trim()) {
+                        contextos.push(`### Contexto Adicional\n\n${this.form.contextoAdicional.trim()}`);
+                    }
+                    if (contextos.length) {
+                        partes.push(`## Contexto e Referências\n\n${contextos.join('\n\n')}`);
+                    }
+
+                    if (this.form.objetivos.length) {
+                        partes.push(`## Objetivos\n\n${this.form.objetivos.map((item) => `- ${item}`).join('\n')}`);
+                    }
+                    if (this.form.criteriosAceite.length) {
+                        partes.push(`## Critérios de Aceite\n\n${this.form.criteriosAceite.map((item) => `- ${item}`).join('\n')}`);
+                    }
+                    if (this.form.foraEscopo.length) {
+                        partes.push(`## Fora do Escopo\n\n${this.form.foraEscopo.map((item) => `- ${item}`).join('\n')}`);
+                    }
+                    if (this.form.restricoes.length) {
+                        partes.push(`## Restrições\n\n${this.form.restricoes.map((item) => `- ${item}`).join('\n')}`);
+                    }
+
+                    const saida = [];
+                    if (this.form.precisaDocumentar) {
+                        saida.push('- Gere documentação técnica do que foi desenvolvido');
+                    }
+                    if (this.form.codigoComentado) {
+                        saida.push('- Adicione comentários explicativos no código');
+                    }
+                    if (this.form.gerarDadosFalsos) {
+                        saida.push('- Utilize Factories e/ou Seeders do Laravel para gerar dados falsos mas extremamente realistas');
+                    }
+                    if (this.form.usarPlaywrightCli) {
+                        saida.push('- Use o Playwright CLI para validar fluxos de interface em navegador real quando a tarefa envolver tela, navegação, formulários ou comportamento visual');
+                    }
+                    if (this.form.comoTestar) {
+                        saida.push('- Ao final da resposta, inclua um passo a passo objetivo de como o usuário deve testar o que foi implementado');
+                    }
+                    if (this.form.observacoesResposta.trim()) {
+                        saida.push(`- ${this.form.observacoesResposta.trim()}`);
+                    }
+                    if (saida.length) {
+                        partes.push(`## Saída Esperada\n\n${saida.join('\n')}`);
+                    }
+
+                    return partes.join('\n\n');
+                },
+                addTag(key) {
+                    const value = this.tagDrafts[key].trim();
+
+                    if (!value || this.form[key].includes(value)) {
+                        this.tagDrafts[key] = '';
+                        return;
+                    }
+
+                    this.form[key].push(value);
+                    this.tagDrafts[key] = '';
+                },
+                removeTag(key, index) {
+                    this.form[key].splice(index, 1);
+                },
+                tipoLabel(value) {
+                    return this.tipos.find((tipo) => tipo.value === value)?.label ?? value;
+                },
+                limpar() {
+                    this.form = structuredClone(defaults);
+                    Object.keys(this.tagDrafts).forEach((key) => this.tagDrafts[key] = '');
+                    this.copiado = false;
+                },
+                copiar() {
+                    navigator.clipboard.writeText(this.prompt).then(() => {
+                        this.copiado = true;
+                        setTimeout(() => {
+                            this.copiado = false;
+                        }, 2500);
+                    });
+                },
+            };
+        }
+    </script>
+</body>
+</html>
