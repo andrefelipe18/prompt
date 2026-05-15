@@ -124,7 +124,7 @@
                     </label>
 
                     <label class="space-y-1.5">
-                        <span class="text-sm font-medium">Descrição da Tarefa</span>
+                            <span class="text-sm font-medium">Descrição da Tarefa</span>
                         <textarea class="min-h-[13rem] w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm leading-6 outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.tarefa" placeholder="Descreva o que precisa ser feito..."></textarea>
                     </label>
                 </div>
@@ -167,7 +167,7 @@
                                             <template x-for="(item, index) in form[campo.key]" :key="`${campo.key}-${item}-${index}`">
                                                 <span class="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
                                                     <span class="truncate" x-text="item"></span>
-                                                    <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeTag(campo.key, index)">×</button>
+                                    <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeTag(campo.key, index)">×</button>
                                                 </span>
                                             </template>
                                         </div>
@@ -194,7 +194,7 @@
                                         <template x-for="(item, index) in form[campo.key]" :key="`${campo.key}-${item}-${index}`">
                                             <span class="inline-flex max-w-full items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
                                                 <span class="truncate" x-text="item"></span>
-                                                <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeTag(campo.key, index)">×</button>
+                                    <button type="button" class="text-slate-500 hover:text-slate-900" @click="removeTag(campo.key, index)">×</button>
                                             </span>
                                         </template>
                                     </div>
@@ -216,6 +216,18 @@
                         <label class="space-y-1.5 sm:col-span-2">
                             <span class="text-sm font-medium">Contexto Adicional</span>
                             <input class="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" x-model="form.contextoAdicional" placeholder="Qualquer informação extra relevante...">
+                        </label>
+
+                        <label class="space-y-1.5 sm:col-span-2">
+                            <span class="text-sm font-medium">Caveman</span>
+                            <select
+                                class="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                                x-model="form.cavemanEstilo"
+                            >
+                                <template x-for="opcao in cavemanOpcoes" :key="opcao.value">
+                                    <option :value="opcao.value" x-text="opcao.label"></option>
+                                </template>
+                            </select>
                         </label>
                     </div>
                 </div>
@@ -282,6 +294,8 @@
                 codigoComentado: false,
                 comoTestar: false,
                 usarPlaywrightCli: false,
+                usarPlaywrightMcp: false,
+                cavemanEstilo: 'normal',
                 gerarDadosFalsos: false,
             };
 
@@ -314,11 +328,19 @@
                     { key: 'restricoes', label: 'Restrições', placeholder: 'Ex: Não criar novos arquivos...' },
                     { key: 'foraEscopo', label: 'Fora do Escopo', placeholder: 'O que não fazer...' },
                 ],
+                cavemanOpcoes: [
+                    { value: 'normal', label: 'Normal' },
+                    { value: 'lite', label: 'Caveman Lite' },
+                    { value: 'full', label: 'Caveman Full' },
+                    { value: 'ultra', label: 'Caveman Ultra' },
+                    { value: 'wenyan-lite', label: 'Wenyan Lite' },
+                ],
                 saidaOptions: [
                     { key: 'precisaDocumentar', label: 'Docs' },
-                    { key: 'codigoComentado', label: 'Comentários' },
+                    { key: 'codigoComentado', label: 'Grill Me' },
                     { key: 'comoTestar', label: 'Como testar' },
                     { key: 'usarPlaywrightCli', label: 'Playwright CLI' },
+                    { key: 'usarPlaywrightMcp', label: 'Playwright MCP' },
                     { key: 'gerarDadosFalsos', label: 'Dados falsos' },
                 ],
                 get prompt() {
@@ -390,6 +412,12 @@
                     if (this.form.usarPlaywrightCli) {
                         saida.push('- Use o Playwright CLI para validar fluxos de interface em navegador real quando a tarefa envolver tela, navegação, formulários ou comportamento visual');
                     }
+                    if (this.form.usarPlaywrightMcp) {
+                        saida.push('- Use o MCP do Playwright para navegar, explorar e validar comportamento de interface no ambiente real.');
+                    }
+                    if (this.form.cavemanEstilo && this.form.cavemanEstilo !== 'normal') {
+                        saida.push(`- Responda em *caveman ${this.form.cavemanEstilo}* (linguagem técnica, direta e sem rodeios).`);
+                    }
                     if (this.form.comoTestar) {
                         saida.push('- Ao final da resposta, inclua um passo a passo objetivo de como o usuário deve testar o que foi implementado');
                     }
@@ -437,3 +465,4 @@
     </script>
 </body>
 </html>
+
